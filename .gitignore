@@ -1,0 +1,9 @@
+# warnme .gitignore
+config/
+logs/
+output/
+script/
+.vscode/
+__backup
+__configs
+__pycache__
