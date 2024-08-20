@@ -1,0 +1,5 @@
+# setup_warnme_req.txt
+snowflake-connector-python 
+pandas
+pytz
+twilio
