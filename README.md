@@ -5,11 +5,9 @@ Warnme is a notification Python script that queries Snowflake and notifies a use
 ## Prerequisites
 
 - Python 3.x
-- `pip` (Python package installer)
 - SMTP email account setup
 - Snowflake account setup
 - Twilio account setup
-- `requirements.txt` file with the necessary dependencies listed
 
 ## Usage
 
