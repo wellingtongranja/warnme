@@ -2,11 +2,14 @@ import argparse
 import json
 import logging
 import os
+import warnings
 from datetime import datetime
 import pytz
 from warnme_db import SnowflakeConnector
 from warnme_sender import WarnMeSender
 from warnme_sms import WarnMeSMS
+
+warnings.filterwarnings("ignore", category=UserWarning, message="pandas only supports SQLAlchemy connectable")
 
 def GetCurrentDateTime():
     local_tz = pytz.timezone('US/Central')
@@ -99,7 +102,7 @@ def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder, ph
         emailBody, 
         isHtml=True, 
         attachments=[csvFilePath], 
-        inlineImages={'header_image': 'template/img/iNFX-APP-Microservices-Icon--EPS.png'}
+        inlineImages={'EPS_image': 'template/img/iNFX-APP-Microservices-Icon--EPS.png'}
     )
     
     if phoneNumber:
