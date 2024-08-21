@@ -43,7 +43,7 @@ def LoadFile(filePath):
         logging.getLogger('WarnMeLogger').error(f"Error loading file {filePath}: {e}")
         return None
 
-def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder, phoneNumber):
+def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder=None, phoneNumber=None):
     logger = ConfigureLogger()
 
     emailConfigFile = './config/sender_config.json'
@@ -83,6 +83,9 @@ def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder, ph
         csvFilePath = os.path.join(outputFolder, csvFileName)
         df.to_csv(csvFilePath, index=False)
         logger.info(f"Query result saved as CSV to {csvFilePath}")
+        attachments = [csvFilePath]
+    else:
+        attachments = []
 
     tableHtml = df.to_html(index=False, escape=False)
     cssStyles = LoadFile(cssFile)
@@ -101,8 +104,11 @@ def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder, ph
         subject, 
         emailBody, 
         isHtml=True, 
-        attachments=[csvFilePath], 
-        inlineImages={'Footer_image': 'template/img/warnme.png'}
+        attachments=attachments, 
+        inlineImages={
+            'Header_image': 'template/img/header.png',
+            'Footer_image': 'template/img/footer.png'
+        }
     )
     
     if phoneNumber:
@@ -115,8 +121,8 @@ if __name__ == "__main__":
     parser.add_argument("query", help="The SQL query to execute and include in the email body")
     parser.add_argument("cssFile", help="The CSS file to style the email")
     parser.add_argument("templateFile", help="The HTML template file for the email")
-    parser.add_argument("outputFolder", help="The folder to save the query result as a CSV file", default=None)
-    parser.add_argument("phoneNumber", help="The phone number to send SMS to", default=None)
+    parser.add_argument("--outputFolder", help="The folder to save the query result as a CSV file", default=None)
+    parser.add_argument("--phoneNumber", help="The phone number to send SMS to", default=None)
 
     args = parser.parse_args()
     
