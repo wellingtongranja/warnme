@@ -102,7 +102,7 @@ def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder, ph
         emailBody, 
         isHtml=True, 
         attachments=[csvFilePath], 
-        inlineImages={'EPS_image': 'template/img/iNFX-APP-Microservices-Icon--EPS.png'}
+        inlineImages={'Footer_image': 'template/img/warnme.png'}
     )
     
     if phoneNumber:
