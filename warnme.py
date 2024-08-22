@@ -43,7 +43,7 @@ def LoadFile(filePath):
         logging.getLogger('WarnMeLogger').error(f"Error loading file {filePath}: {e}")
         return None
 
-def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder=None, phoneNumber=None):
+def Main(recipientEmails, subject, query, cssFile, templateFile, outputFolder=None, phoneNumber=None):
     logger = ConfigureLogger()
 
     emailConfigFile = './config/sender_config.json'
@@ -99,24 +99,25 @@ def Main(recipientEmail, subject, query, cssFile, templateFile, outputFolder=Non
     emailBody = emailBody.replace("{{CURRENT_DATETIME}}", CURRENT_DATETIME)
     emailBody = emailBody.replace('<link rel="stylesheet" href="../css/table_styles.css">', f'<style>{cssStyles}</style>')
 
-    warnmeSender.SendEmail(
-        recipientEmail, 
-        subject, 
-        emailBody, 
-        isHtml=True, 
-        attachments=attachments, 
-        inlineImages={
-            'Header_image': 'template/img/header.png',
-            'Footer_image': 'template/img/footer.png'
-        }
-    )
+    for recipientEmail in recipientEmails:
+        warnmeSender.SendEmail(
+            recipientEmail, 
+            subject, 
+            emailBody, 
+            isHtml=True, 
+            attachments=attachments, 
+            inlineImages={
+                'Header_image': 'template/img/header.png',
+                'Footer_image': 'template/img/footer.png'
+            }
+        )
     
     if phoneNumber:
         warnmeSms.SendSMS(phoneNumber, f"You received your {subject} in your e-mail.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send an email using WarnMeSender.")
-    parser.add_argument("recipientEmail", help="The recipient's email address")
+    parser.add_argument("recipientEmails", help="Comma-separated list of recipient email addresses")
     parser.add_argument("subject", help="The subject of the email")
     parser.add_argument("query", help="The SQL query to execute and include in the email body")
     parser.add_argument("cssFile", help="The CSS file to style the email")
@@ -125,5 +126,6 @@ if __name__ == "__main__":
     parser.add_argument("--phoneNumber", help="The phone number to send SMS to", default=None)
 
     args = parser.parse_args()
+    recipientEmails = args.recipientEmails.split(',')
     
-    Main(args.recipientEmail, args.subject, args.query, args.cssFile, args.templateFile, args.outputFolder, args.phoneNumber)
+    Main(recipientEmails, args.subject, args.query, args.cssFile, args.templateFile, args.outputFolder, args.phoneNumber)
