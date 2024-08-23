@@ -53,9 +53,9 @@ def LoadFile(file_path):
 def Main(recipient_emails, subject, query, css_file, template_file, output_folder=None, phone_number=None):
     logger = ConfigureLogger()
 
-    email_config = LoadConfig('./config/sender_config.json', 'EMAIL_')
-    db_config = LoadConfig('./config/db_config.json', 'DB_')
-    twilio_config = LoadConfig('./config/twilio_config.json', 'TWILIO_')
+    email_config = LoadConfig('./config/email_config.json', 'WARNME_EMAIL_')
+    db_config = LoadConfig('./config/db_config.json', 'WARNME_DB_')
+    twilio_config = LoadConfig('./config/twilio_config.json', 'WARNME_TWILIO_')
 
     if not email_config or not db_config or not twilio_config:
         logger.error("Configuration files are missing or invalid.")

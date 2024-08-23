@@ -16,7 +16,7 @@ class WarnMeSender:
 
     def SendEmail(self, recipientEmail, subject, body, isHtml=False, attachments=None, inlineImages=None):
         message = MIMEMultipart('related')
-        message['From'] = self.config["sender_email"]
+        message['From'] = self.config["WARNME_EMAIL_SENDER_EMAIL"]
         message['To'] = recipientEmail
         message['Subject'] = subject
 
@@ -63,10 +63,10 @@ class WarnMeSender:
 
     def _SendSMTPMail(self, message, recipientEmail):
         try:
-            with smtplib.SMTP(self.config["smtp_server"], self.config["smtp_port"]) as server:
+            with smtplib.SMTP(self.config["WARNME_EMAIL_SMTP_SERVER"], self.config["WARNME_EMAIL_SMTP_PORT"]) as server:
                 server.starttls()
-                server.login(self.config["sender_email"], self.config["sender_password"])
-                server.sendmail(self.config["sender_email"], recipientEmail, message.as_string())
+                server.login(self.config["WARNME_EMAIL_SENDER_EMAIL"], self.config["WARNME_EMAIL_SENDER_PASSWORD"])
+                server.sendmail(self.config["WARNME_EMAIL_SENDER_EMAIL"], recipientEmail, message.as_string())
                 self.logger.info(f"Email sent to {recipientEmail}")
         except Exception as e:
             self.logger.error(f"Failed to send email to {recipientEmail}: {e}")

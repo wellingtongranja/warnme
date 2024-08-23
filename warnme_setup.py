@@ -20,30 +20,30 @@ def create_directories():
 
 def create_template_config():
     config_templates = {
-        "config/sender_config.json": """
+        "config/email_config.json": """
         {
-            "smtp_server": "smtp.example.com",
-            "smtp_port": 587,
-            "sender_email": "name@example.com",
-            "sender_password": "xxx xxx xxx xxx"
+            "WARNME_EMAIL_SMTP_SERVER": "smtp.example.com",
+            "WARNME_EMAIL_SMTP_PORT": 587,
+            "WARNME_EMAIL_SENDER_EMAIL": "name@example.com",
+            "WARNME_EMAIL_SENDER_PASSWORD": "xxx xxx xxx xxx"
         }
         """,
         "config/db_config.json": """
         {
-            "user": "your_snowflake_user",
-            "password": "your_snowflake_password",
-            "account": "your_snowflake_account",
-            "warehouse": "your_snowflake_warehouse",
-            "database": "your_snowflake_database",
-            "schema": "your_snowflake_schema",
-            "rolename": " your_snowflake_rolename"
+            "WARNME_DB_USER": "your_snowflake_user",
+            "WARNME_DB_PASSWORD": "your_snowflake_password",
+            "WARNME_DB_ACCOUNT": "your_snowflake_account",
+            "WARNME_DB_WAREHOUSE": "your_snowflake_warehouse",
+            "WARNME_DB_DATABASE": "your_snowflake_database",
+            "WARNME_DB_SCHEMA": "your_snowflake_schema",
+            "WARNME_DB_ROLENAME": "your_snowflake_rolename"
         }
         """,
         "config/twilio_config.json": """
         {
-            "account_sid": "your_twilio_account_sid",
-            "auth_token": "your_twilio_auth_token",
-            "from_phone_number": "your_twilio_from_phone_number"
+            "WARNME_TWILIO_ACCOUNT_SID": "your_twilio_account_sid",
+            "WARNME_TWILIO_AUTH_TOKEN": "your_twilio_auth_token",
+            "WARNME_TWILIO_FROM_PHONE_NUMBER": "your_twilio_from_phone_number"
         }
         """
     }

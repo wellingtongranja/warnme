@@ -12,12 +12,12 @@ class SnowflakeConnector:
     def Connect(self):
         try:
             conn = snowflake.connector.connect(
-                user=self.config["user"],
-                password=self.config["password"],
-                account=self.config["account"],
-                database=self.config["database"],
-                schema=self.config["schema"],
-                role=self.config["rolename"]
+                user=self.config["WARNME_DB_USER"],
+                password=self.config["WARNME_DB_PASSWORD"],
+                account=self.config["WARNME_DB_ACCOUNT"],
+                database=self.config["WARNME_DB_DATABASE"],
+                schema=self.config["WARNME_DB_SCHEMA"],
+                role=self.config["WARNME_DB_ROLENAME"]
             )
             self.logger.info("Connection to Snowflake established.")
             return conn
@@ -28,7 +28,7 @@ class SnowflakeConnector:
     def SetWarehouse(self, conn):
         try:
             cursor = conn.cursor()
-            cursor.execute(f"USE WAREHOUSE {self.config['warehouse']}")
+            cursor.execute(f"USE WAREHOUSE {self.config['WARNME_DB_WAREHOUSE']}")
             cursor.close()
             self.logger.info("Warehouse selected.")
         except Exception as e:
