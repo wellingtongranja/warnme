@@ -29,17 +29,24 @@ def ConfigureLogger():
 
 def LoadConfig(file_path, env_prefix):
     config = {}
+    # Load from environment variables first
+    for key, value in os.environ.items():
+        if key.startswith(env_prefix):
+            config_key = key[len(env_prefix):].lower()
+            config[config_key] = value
+
+    # Only load from config file if it exists and environment variables are not set
     if os.path.exists(file_path):
         try:
             with open(file_path, 'r') as file:
-                config = json.load(file)
+                file_config = json.load(file)
+                # Only update config with file values if they are not already set by environment variables
+                for key, value in file_config.items():
+                    if key not in config:
+                        config[key] = value
         except Exception as e:
             logging.getLogger('WarnMeLogger').error(f"Error loading config file {file_path}: {e}")
-    else:
-        for key, value in os.environ.items():
-            if key.startswith(env_prefix):
-                config_key = key[len(env_prefix):].lower()
-                config[config_key] = value
+    
     return config
 
 def LoadFile(file_path):
@@ -57,8 +64,8 @@ def Main(recipient_emails, subject, query, css_file, template_file, output_folde
     db_config = LoadConfig('./config/db_config.json', 'WARNME_DB_')
     twilio_config = LoadConfig('./config/twilio_config.json', 'WARNME_TWILIO_')
 
-    if not email_config or not db_config or not twilio_config:
-        logger.error("Configuration files are missing or invalid.")
+    if not email_config and not db_config and not twilio_config:
+        logger.error("Configuration files are missing or invalid, and no environment variables found.")
         return
 
     snowflake_connector = SnowflakeConnector(db_config)

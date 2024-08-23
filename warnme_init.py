@@ -1,7 +1,6 @@
 import os
 import sys
 import getpass
-import msvcrt
 
 def DisplayHeader():
     header = """
@@ -38,21 +37,7 @@ def DeleteConfigFiles():
             print(f"Error deleting config file {file_path}: {e}")
 
 def masked_input(prompt):
-    print(prompt, end='', flush=True)
-    password = ''
-    while True:
-        char = msvcrt.getch()
-        if char in {b'\r', b'\n'}:  # Enter key pressed
-            print('')
-            break
-        elif char == b'\x08':  # Backspace key pressed
-            if len(password) > 0:
-                password = password[:-1]
-                sys.stdout.write('\b \b')
-        else:
-            password += char.decode('utf-8')
-            sys.stdout.write('#')
-    return password
+    return getpass.getpass(prompt)
 
 def PromptForEmailConfig():
     print("Please enter the EMAIL configuration:")
