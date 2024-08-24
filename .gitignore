@@ -7,3 +7,4 @@ script/
 __backup
 __configs
 __pycache__
+__query__
