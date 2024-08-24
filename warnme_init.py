@@ -1,7 +1,7 @@
 import os
-import sys
-import getpass
-import msvcrt
+import json
+import logging
+import subprocess
 
 def DisplayHeader():
     header = """
@@ -23,113 +23,175 @@ def DisplayHeader():
     """
     print(header)
 
-def DeleteConfigFiles():
-    config_files = [
-        './config/sender_config.json',
-        './config/db_config.json',
-        './config/twilio_config.json'
-    ]
-    for file_path in config_files:
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                print(f"Deleted config file: {file_path}")
-        except Exception as e:
-            print(f"Error deleting config file {file_path}: {e}")
-
-def masked_input(prompt):
-    print(prompt, end='', flush=True)
-    password = ''
-    while True:
-        char = msvcrt.getch()
-        if char in {b'\r', b'\n'}:  # Enter key pressed
-            print('')
-            break
-        elif char == b'\x08':  # Backspace key pressed
-            if len(password) > 0:
-                password = password[:-1]
-                sys.stdout.write('\b \b')
-        else:
-            password += char.decode('utf-8')
-            sys.stdout.write('#')
-    return password
-
-def PromptForEmailConfig():
-    print("Please enter the EMAIL configuration:")
-    os.environ['WARNME_EMAIL_SMTP_SERVER'] = input("SMTP Server: ")
-    os.environ['WARNME_EMAIL_SMTP_PORT'] = input("SMTP Port: ")
-    os.environ['WARNME_EMAIL_SENDER_EMAIL'] = input("Sender Email: ")
-    os.environ['WARNME_EMAIL_SENDER_PASSWORD'] = masked_input("Sender Password: ")
-
-def PromptForDbConfig():
-    print("Please enter the DB configuration:")
-    os.environ['WARNME_DB_USER'] = input("DB User: ")
-    os.environ['WARNME_DB_PASSWORD'] = masked_input("DB Password: ")
-    os.environ['WARNME_DB_ACCOUNT'] = input("DB Account: ")
-    os.environ['WARNME_DB_WAREHOUSE'] = input("DB Warehouse: ")
-    os.environ['WARNME_DB_DATABASE'] = input("DB Database: ")
-    os.environ['WARNME_DB_SCHEMA'] = input("DB Schema: ")
-    os.environ['WARNME_DB_ROLENAME'] = input("DB Role Name: ")
-
-def PromptForTwilioConfig():
-    print("Please enter the TWILIO configuration (optional, press Enter to skip):")
-    os.environ['WARNME_TWILIO_ACCOUNT_SID'] = input("Twilio Account SID: ")
-    os.environ['WARNME_TWILIO_AUTH_TOKEN'] = masked_input("Twilio Auth Token: ")
-    os.environ['WARNME_TWILIO_FROM_PHONE_NUMBER'] = input("Twilio From Phone Number: ")
-
-def InitializeEnvironmentVariables():
+def LoadConfig(file_path):
+    """Load configuration from a JSON file."""
     try:
-        PromptForEmailConfig()
-        PromptForDbConfig()
-        if input("Do you want to configure Twilio? (y/n): ").lower() == 'y':
-            PromptForTwilioConfig()
-    except KeyboardInterrupt:
-        print("\nProcess aborted by user.")
-        return
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except Exception as e:
+        logging.error(f"Error loading config file {file_path}: {e}")
+        return None
 
-def ReadEnvironmentVariables():
-    print("Current environment variables:")
+def SetEnvVariables(config, env_prefix):
+    """Set environment variables from the config dictionary."""
+    for key, value in config.items():
+        env_var = f"{env_prefix}{key.upper()}"
+        os.environ[env_var] = str(value)
+
+def SetHerokuEnvVariables(config, env_prefix, app_name):
+    """Set Heroku environment variables using the Heroku CLI."""
+    heroku_path = "C:\\Program Files\\Heroku\\bin\\heroku.cmd"  # Update this path based on the output of `where heroku`
+    for key, value in config.items():
+        env_var = f"{env_prefix}{key.upper()}={value}"
+        try:
+            result = subprocess.run([heroku_path, "config:set", env_var, "--app", app_name], check=True, capture_output=True, text=True)
+            logging.info(f"Set Heroku env variable: {env_var}")
+            logging.info(f"Heroku CLI output: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Error setting Heroku env variable: {env_var}")
+            logging.error(f"Heroku CLI error output: {e.stderr}")
+        except FileNotFoundError:
+            logging.error("Heroku CLI not found. Please ensure it is installed and added to your PATH.")
+            print("Heroku CLI not found. Please ensure it is installed and added to your PATH.")
+            return
+
+def ReadHerokuEnvVariables(app_name):
+    """Read Heroku environment variables using the Heroku CLI."""
+    heroku_path = "C:\\Program Files\\Heroku\\bin\\heroku.cmd"  # Update this path based on the output of `where heroku`
+    try:
+        result = subprocess.run([heroku_path, "config", "--app", app_name], check=True, capture_output=True, text=True)
+        logging.info(f"Heroku env variables for app {app_name}:")
+        logging.info(result.stdout)
+        print(f"Heroku env variables for app {app_name}:")
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error reading Heroku env variables for app {app_name}")
+        logging.error(f"Heroku CLI error output: {e.stderr}")
+    except FileNotFoundError:
+        logging.error("Heroku CLI not found. Please ensure it is installed and added to your PATH.")
+        print("Heroku CLI not found. Please ensure it is installed and added to your PATH.")
+
+def ClearHerokuEnvVariables(config, env_prefix, app_name):
+    """Clear Heroku environment variables using the Heroku CLI."""
+    heroku_path = "C:\\Program Files\\Heroku\\bin\\heroku.cmd"  # Update this path based on the output of `where heroku`
+    for key in config.keys():
+        env_var = f"{env_prefix}{key.upper()}"
+        try:
+            result = subprocess.run([heroku_path, "config:unset", env_var, "--app", app_name], check=True, capture_output=True, text=True)
+            logging.info(f"Cleared Heroku env variable: {env_var}")
+            logging.info(f"Heroku CLI output: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Error clearing Heroku env variable: {env_var}")
+            logging.error(f"Heroku CLI error output: {e.stderr}")
+        except FileNotFoundError:
+            logging.error("Heroku CLI not found. Please ensure it is installed and added to your PATH.")
+            print("Heroku CLI not found. Please ensure it is installed and added to your PATH.")
+            return
+
+def PrintEnvVariables():
+    """Print initialized environment variables."""
+    print("Initialized Environment Variables:")
     for key, value in os.environ.items():
         if key.startswith('WARNME_'):
-            if 'PASSWORD' in key or 'TOKEN' in key:
-                print(f"{key}: {'#' * 8}")
-            else:
-                print(f"{key}: {value}")
+            print(f"{key}: {value}")
 
-def ClearEnvironmentVariables():
-    keys_to_clear = [
-        'WARNME_EMAIL_SMTP_SERVER', 'WARNME_EMAIL_SMTP_PORT', 'WARNME_EMAIL_SENDER_EMAIL', 'WARNME_EMAIL_SENDER_PASSWORD',
-        'WARNME_DB_USER', 'WARNME_DB_PASSWORD', 'WARNME_DB_ACCOUNT', 'WARNME_DB_WAREHOUSE', 'WARNME_DB_DATABASE', 'WARNME_DB_SCHEMA', 'WARNME_DB_ROLENAME',
-        'WARNME_TWILIO_ACCOUNT_SID', 'WARNME_TWILIO_AUTH_TOKEN', 'WARNME_TWILIO_FROM_PHONE_NUMBER'
-    ]
+def ClearEnvVariables():
+    """Clear environment variables that start with 'WARNME_'."""
+    keys_to_clear = [key for key in os.environ if key.startswith('WARNME_')]
     for key in keys_to_clear:
-        if key in os.environ:
-            del os.environ[key]
-    print("Environment variables cleared.")
+        del os.environ[key]
+    print("Cleared all WARNME_ environment variables.")
 
-if __name__ == "__main__":
+def Main():
+    logging.basicConfig(level=logging.DEBUG)
+    
     DisplayHeader()
-    if input("Do you agree with the terms in LICENSE.txt? (y/n): ").lower() != 'y':
-        print("You must agree with the terms to use this application.")
-        exit(1)
+    agree = input("Do you agree to the terms in LICENSE.txt? (yes/no): ")
+    if agree.lower() != 'yes':
+        print("You must agree to the terms to use this application.")
+        return
     
     while True:
-        print("\nOptions:")
-        print("1. Initialize environment variables")
-        print("2. Read environment variables")
-        print("3. Clear environment variables")
-        print("4. Exit")
-        choice = input("Choose an option: ")
-        
+        DisplayHeader()
+        print("\n= MENU =================================")
+        print("1. LOCAL MACHINE: Initialize env. variables (config content)")
+        print("2. LOCAL MACHINE: Read env. variables")
+        print("3. LOCAL MACHINE: Clear env. variables")
+        print("4. HEROKU: Initialize env. variables (config content)")
+        print("5. HEROKU: Read env. variables")
+        print("6. HEROKU: Clear env. variables")
+        print("------------------------------------------------------------------")
+        print("0. Exit")
+        choice = input("Enter your choice: ")
+
         if choice == '1':
-            DeleteConfigFiles()
-            InitializeEnvironmentVariables()
-            print("Environment variables initialized and local config files deleted for serverless deployments.")
+            # Load and set environment variables for email config
+            email_config = LoadConfig('./config/email_config.json')
+            if email_config:
+                SetEnvVariables(email_config, 'WARNME_EMAIL_')
+            
+            # Load and set environment variables for database config
+            db_config = LoadConfig('./config/db_config.json')
+            if db_config:
+                SetEnvVariables(db_config, 'WARNME_DB_')
+            
+            # Load and set environment variables for Twilio config
+            twilio_config = LoadConfig('./config/twilio_config.json')
+            if twilio_config:
+                SetEnvVariables(twilio_config, 'WARNME_TWILIO_')
+            print("Environment variables initialized.")
+        
         elif choice == '2':
-            ReadEnvironmentVariables()
+            PrintEnvVariables()
+        
         elif choice == '3':
-            ClearEnvironmentVariables()
+            ClearEnvVariables()
+        
         elif choice == '4':
+            heroku_app_name = input("Enter your Heroku app name: ")
+            # Load and set Heroku environment variables for email config
+            email_config = LoadConfig('./config/email_config.json')
+            if email_config:
+                SetHerokuEnvVariables(email_config, 'WARNME_EMAIL_', heroku_app_name)
+            
+            # Load and set Heroku environment variables for database config
+            db_config = LoadConfig('./config/db_config.json')
+            if db_config:
+                SetHerokuEnvVariables(db_config, 'WARNME_DB_', heroku_app_name)
+            
+            # Load and set Heroku environment variables for Twilio config
+            twilio_config = LoadConfig('./config/twilio_config.json')
+            if twilio_config:
+                SetHerokuEnvVariables(twilio_config, 'WARNME_TWILIO_', heroku_app_name)
+            print("Heroku environment variables initialized.")
+        
+        elif choice == '5':
+            heroku_app_name = input("Enter your Heroku app name: ")
+            ReadHerokuEnvVariables(heroku_app_name)
+        
+        elif choice == '6':
+            heroku_app_name = input("Enter your Heroku app name: ")
+            # Load and clear Heroku environment variables for email config
+            email_config = LoadConfig('./config/email_config.json')
+            if email_config:
+                ClearHerokuEnvVariables(email_config, 'WARNME_EMAIL_', heroku_app_name)
+            
+            # Load and clear Heroku environment variables for database config
+            db_config = LoadConfig('./config/db_config.json')
+            if db_config:
+                ClearHerokuEnvVariables(db_config, 'WARNME_DB_', heroku_app_name)
+            
+            # Load and clear Heroku environment variables for Twilio config
+            twilio_config = LoadConfig('./config/twilio_config.json')
+            if twilio_config:
+                ClearHerokuEnvVariables(twilio_config, 'WARNME_TWILIO_', heroku_app_name)
+            print("Heroku environment variables cleared.")
+        
+        elif choice == '0':
             break
+        
         else:
             print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    Main()
