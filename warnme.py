@@ -38,8 +38,7 @@ def LoadConfig(file_path, env_prefix):
     else:
         for key, value in os.environ.items():
             if key.startswith(env_prefix):
-                config_key = key[len(env_prefix):].lower()
-                config[config_key] = value
+                config[key] = value
     return config
 
 def LoadFile(file_path):
